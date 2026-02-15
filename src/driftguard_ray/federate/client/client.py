@@ -1,6 +1,8 @@
 
 
 from dataclasses import dataclass
+import ray
+import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
@@ -28,6 +30,8 @@ class FedClientArgs:
 
     img_size: int = 28 # 28, 224 ,224
 
+    resource: Dict[str, float] | None = None
+
     exp_name: str = "exp"
     exp_root: str = "exp"
 
@@ -48,6 +52,8 @@ class FedClient:
         self._trainer: Trainer = args.trainer
         self._buffer: List =[]
         self.recorder = Recorder(args.exp_name, args.exp_root)
+
+        self.resource = args.resource
 
         self.time_step = 1
     
@@ -182,30 +188,67 @@ class FedClient:
         )
         return obs
     
-    def train(self, train_sets: List[Tuple[bytes, int]], val_sets: List[Tuple[bytes, int]], time_step: int) -> None:
-        
-        train_loader1, train_loader2, val_loader = (
-            DataLoader(
-                ListDataset(train_sets, get_inference_transform(self.img_size)),
-                batch_size=self.batch_size,
-                shuffle=True,
-            ),
-            DataLoader(
-                ListDataset(train_sets, get_train_transform(self.img_size)),
-                batch_size=self.batch_size,
-                shuffle=True,
-            ),
-            DataLoader(
-                ListDataset(val_sets, get_inference_transform(self.img_size)),
-                batch_size=self.batch_size,
-                shuffle=False,
-            ),
-        )
 
-        # 2 stage train, origin -> 增强
-        history_1 = self._trainer.fit(train_loader1, val_loader)
-        history_2 = self._trainer.fit(train_loader2, val_loader)
+    def train(self, train_sets: List[Tuple[bytes, int]], val_sets: List[Tuple[bytes, int]], time_step: int) -> None:
+        num_gpus = 0.01 if "cuda" in str(self._trainer.device) else 0
+        
+        model_state, trained_epochs, times = ray.get(
+            _train.options(
+                num_gpus=num_gpus,
+                num_cpus=0.01,
+                resources=self.resource,
+            ).remote(
+                self.img_size,
+                self.batch_size,
+                self._trainer,
+                train_sets,
+                val_sets,
+            )
+        )
+        self.model.load_state_dict(model_state, strict=True)
 
         self.recorder.update_cost(
-            time_step, get_trainable_params(self.model), len(history_1) + len(history_2)
+            time_step,
+            get_trainable_params(self.model),
+            trained_epochs,
+            times,
         )
+
+# @ray.remote(resources={"pi_2": 1})
+def _train(
+    img_size: int,
+    batch_size: int,
+    trainer: Trainer,
+    train_sets: List[Tuple[bytes, int]],
+    val_sets: List[Tuple[bytes, int]],
+) -> Tuple[Dict[str, torch.Tensor], int, List[float]]:
+    print("start training on remote trainer...")
+    train_loader1, train_loader2, val_loader = (
+        DataLoader(
+            ListDataset(train_sets, get_inference_transform(img_size)),
+            batch_size=batch_size,
+            shuffle=True,
+        ),
+        DataLoader(
+            ListDataset(train_sets, get_train_transform(img_size)),
+            batch_size=batch_size,
+            shuffle=True,
+        ),
+        DataLoader(
+            ListDataset(val_sets, get_inference_transform(img_size)),
+            batch_size=batch_size,
+            shuffle=False,
+        ),
+    )
+
+    # 2 stage train, origin -> 增强
+    history_1 = trainer.fit(train_loader1, val_loader)
+    history_2 = trainer.fit(train_loader2, val_loader)
+
+    model_state = {
+        name: tensor.detach().cpu()
+        for name, tensor in trainer.model.state_dict().items()
+    }
+    print("end training on remote trainer...")
+
+    return model_state, len(history_1) + len(history_2), [r["time"] for r in [*history_1, *history_2] ]

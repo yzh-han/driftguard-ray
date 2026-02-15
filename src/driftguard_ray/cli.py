@@ -75,6 +75,7 @@ def build_client_args(
     cfg: LaunchConfig,
     data_endpoint: DataServiceEndpoint,
     server_endpoint: ServerEndpoint,
+    resource: dict[str, float] | None = None,
 ) -> FedClientArgs:
     """Construct FedClient args for a single client actor."""
 
@@ -98,6 +99,7 @@ def build_client_args(
         img_size=cfg.dataset.img_size,
         exp_name=cfg.exp_name,
         exp_root=cfg.exp_root,
+        resource=resource,
     )
     return args
 
@@ -153,13 +155,13 @@ def main() -> None:
             # client
             total_steps=30,  # <--------------------
             batch_size=8,
-            num_clients=20,
+            num_clients=30, # 5
             model=exp.model,
             device=exp.device,
-            epochs=20,  # <--------------------
+            epochs=2,  # 20 <--------------------
             lr=exp.lr,
             # server
-            rt_round=5,  # communication rounds <--------------------
+            rt_round=2,  # 5 communication rounds <--------------------
             strategy=exp.strategy,
             cluster_thr=exp.strategy.cluster_thr
             or exp.cluster_thr,  # 0.3,  # <--------------------
@@ -214,27 +216,16 @@ def main() -> None:
                 RayFedClientActor.options(
                     num_gpus=0.01 if "cuda" in cfg.device else 0,
                 ).remote(
-                    build_client_args(cid, cfg, data_ep, server_ep)
+                    build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_2": 1})
                 )
                 for cid in range(cfg.num_clients)
             ]
             for step in range(cfg.total_steps):
                 logger.info(f"=== Time step {step + 1} ===")
-                # for actor in client_actors:
-                #     logger.info(f"Requesting step_1 from client actor {ray.get(actor.get_cid.remote())} ...")
-                #     actor.step_1.remote()
                 ray.get([actor.step_1.remote() for actor in client_actors])
-                for actor in client_actors:
-                    # logger.info(f"Requesting step_2 from client actor {ray.get(actor.get_cid.remote())} ...")
-                    ray.get(actor.step_2.remote())
-                for actor in client_actors:
-                    logger.info(f"Requesting step_3 from client actor {ray.get(actor.get_cid.remote())} ...")
-                    ray.get(actor.step_3.remote())
-                # ray.get([actor.step_2.remote() for actor in client_actors])
-                # ray.get([actor.step_3.remote() for actor in client_actors])
-                recorders: list[Recorder] = ray.get(
-                    [actor.get_recorder.remote() for actor in client_actors]
-                )
+                ray.get([actor.step_2.remote() for actor in client_actors])
+                ray.get([actor.step_3.remote() for actor in client_actors])
+
             recorders: list[Recorder] = ray.get(
                 [actor.get_recorder.remote() for actor in client_actors]
             )

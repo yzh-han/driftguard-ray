@@ -228,8 +228,10 @@ def set_params(
         ]
     assert len(param_names) == len(params), "set_params: Mismatched number"
 
-    # Create state_dict from numpy weights
+    # Create state_dict from numpy weights.
+    # Ray/plasma can materialize read-only NumPy buffers; PyTorch warns and
+    # writes would be undefined behavior. Make a writable copy.
     state_dict = {
-        n: torch.from_numpy(p) for n, p in zip(param_names, params)
+        n: torch.from_numpy(np.array(p, copy=True)) for n, p in zip(param_names, params)
     }
     model.load_state_dict(state_dict, strict=False)

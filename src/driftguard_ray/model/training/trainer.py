@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import os
+import time
 from typing import Callable, Iterable, Optional, Tuple
 
 import torch
@@ -198,11 +199,14 @@ class Trainer:
         no_improve = 0
 
         for epoch in range(self.config.epochs):
+            start = time.perf_counter()
             train_metrics, _, _, _ = self._run_epoch(train_loader, training=True)
             record = {
                 "epoch": epoch,
                 "train_loss": train_metrics.loss,
+                "time": time.perf_counter() - start,
             }
+            
             if train_metrics.accuracy is not None:
                 record["train_accuracy"] = train_metrics.accuracy
 
@@ -213,6 +217,7 @@ class Trainer:
                 record["val_loss"] = val_metrics.loss
                 if val_metrics.accuracy is not None:
                     record["val_accuracy"] = val_metrics.accuracy
+            
             history.append(record)
             
             logger.debug(f"Epoch {epoch+1}/{self.config.epochs}: {record}")

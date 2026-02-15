@@ -1,26 +1,9 @@
-import ray
 import time
 
-# @ray.remote
-# class Counter:
-#     def __init__(self):
-#         self.value = 0
+start = time.perf_counter()
+# 你的训练代码
+time.sleep(2)  # 模拟训练过程
+elapsed = time.perf_counter() - start
+print(f"train time: {elapsed}s")
 
-#     def increment(self):
-#         self.value += 1
-#         return self.value
-
-#     def get_counter(self):
-#         return self.value
-    
-# # Create an actor from this class.
-# counter = Counter.remote()
-
-
-# # Call the actor.
-# obj_ref = counter.increment.remote()
-# print(ray.get(obj_ref))
-ray.init("auto")
-# print(len(ray.nodes()))
-
-ray.shutdown()
+d = {"a": 1, "b": 2}

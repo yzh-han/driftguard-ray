@@ -19,8 +19,8 @@ class Recorder:
     def update_acc(self, time_step: int, acc: float) -> None:
         self.metrics["acc"].append((time_step, acc))
     
-    def update_cost(self, time_step: int, trainable_params: float, epochs: int) -> None:
-        self.metrics["cost"].append((time_step, trainable_params, epochs))
+    def update_cost(self, time_step: int, trainable_params: float, epochs: int, times: List[float]) -> None:
+        self.metrics["cost"].append((time_step, trainable_params, epochs, times))
 
     def record(self, cid:int) -> None:
         dir_path = Path(self.root) / self.name
