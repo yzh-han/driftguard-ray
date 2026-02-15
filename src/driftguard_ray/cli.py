@@ -219,27 +219,34 @@ def main() -> None:
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
                     ).remote(
-                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_1": 1})
+                        build_client_args(
+                            cid, cfg, data_ep, server_ep, resource={"pi_1": 1}
+                        )
                     )
-                    for cid in range(cfg.num_clients // 3)
+                    for cid in range(0, cfg.num_clients // 3)
                 ],
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
                     ).remote(
-                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_2": 1})
+                        build_client_args(
+                            cid, cfg, data_ep, server_ep, resource={"pi_2": 1}
+                        )
                     )
-                    for cid in range(cfg.num_clients // 3)
+                    for cid in range(cfg.num_clients // 3, 2 * cfg.num_clients // 3)
                 ],
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
                     ).remote(
-                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_3": 1})
+                        build_client_args(
+                            cid, cfg, data_ep, server_ep, resource={"pi_3": 1}
+                        )
                     )
-                    for cid in range(cfg.num_clients // 3)
+                    for cid in range(2 * cfg.num_clients // 3, cfg.num_clients)
                 ],
             ]
+            print(len(client_actors))
             for step in range(cfg.total_steps):
                 logger.info(f"=== Time step {step + 1} ===")
                 ray.get([actor.step_1.remote() for actor in client_actors])

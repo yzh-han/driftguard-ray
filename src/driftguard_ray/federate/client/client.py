@@ -223,7 +223,7 @@ def _train(
     train_sets: List[Tuple[bytes, int]],
     val_sets: List[Tuple[bytes, int]],
 ) -> Tuple[Dict[str, torch.Tensor], int, List[float]]:
-    print("start training on remote trainer...")
+    # print("start training on remote trainer...")
     train_loader1, train_loader2, val_loader = (
         DataLoader(
             ListDataset(train_sets, get_inference_transform(img_size)),
@@ -250,6 +250,6 @@ def _train(
         name: tensor.detach().cpu()
         for name, tensor in trainer.model.state_dict().items()
     }
-    print("end training on remote trainer...")
+    print(f"epoch time: {torch.mean(torch.tensor([r['time'] for r in [*history_1, *history_2]])):.2f}s")
 
     return model_state, len(history_1) + len(history_2), [r["time"] for r in [*history_1, *history_2] ]
