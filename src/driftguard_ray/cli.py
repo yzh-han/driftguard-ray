@@ -155,7 +155,7 @@ def main() -> None:
             # client
             total_steps=30,  # <--------------------
             batch_size=8,
-            num_clients=30, # 5
+            num_clients=15, # 5
             model=exp.model,
             device=exp.device,
             epochs=2,  # 20 <--------------------
@@ -212,13 +212,32 @@ def main() -> None:
         server_ep = RayServerEndpoint(server_actor)
 
         try:
+            assert cfg.num_clients % 3 == 0, "num_clients should %3 == 0"
             client_actors = [
-                RayFedClientActor.options(
-                    num_gpus=0.01 if "cuda" in cfg.device else 0,
-                ).remote(
-                    build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_2": 1})
-                )
-                for cid in range(cfg.num_clients)
+                *[
+                    RayFedClientActor.options(
+                        num_gpus=0.01 if "cuda" in cfg.device else 0,
+                    ).remote(
+                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_1": 1})
+                    )
+                    for cid in range(cfg.num_clients // 3)
+                ],
+                *[
+                    RayFedClientActor.options(
+                        num_gpus=0.01 if "cuda" in cfg.device else 0,
+                    ).remote(
+                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_2": 1})
+                    )
+                    for cid in range(cfg.num_clients // 3)
+                ],
+                *[
+                    RayFedClientActor.options(
+                        num_gpus=0.01 if "cuda" in cfg.device else 0,
+                    ).remote(
+                        build_client_args(cid, cfg, data_ep, server_ep, resource = {"pi_3": 1})
+                    )
+                    for cid in range(cfg.num_clients // 3)
+                ],
             ]
             for step in range(cfg.total_steps):
                 logger.info(f"=== Time step {step + 1} ===")
