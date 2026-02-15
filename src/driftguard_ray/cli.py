@@ -211,7 +211,9 @@ def main() -> None:
 
         try:
             client_actors = [
-                RayFedClientActor.remote(
+                RayFedClientActor.options(
+                    num_gpus=0.01 if "cuda" in cfg.device else 0,
+                ).remote(
                     build_client_args(cid, cfg, data_ep, server_ep)
                 )
                 for cid in range(cfg.num_clients)
@@ -264,3 +266,13 @@ if __name__ == "__main__":
 
     if ray.is_initialized():
         ray.shutdown()
+
+# ray start --head --resources='{"my_res": 2, "ssd": 1}'
+# # worker 节点同理
+# ray start --address=<head-ip>:6379 --resources='{"my_res": 1}'
+
+# a = MyActor.options(
+#     num_cpus=2,
+#     num_gpus=1,
+#     resources={"ssd": 1, "node_elseptimo": 0.01}
+# ).remote()
