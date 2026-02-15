@@ -33,13 +33,13 @@ class ServerSyncCoordinator:
         with self._step_lock:
             self.req_state.step[cid].recv = True
             if self.req_state.all_recv("step"):
-                logger.info(f"clients:{list(self.req_state.step.keys())}")
+                # logger.info(f"clients:{list(self.req_state.step.keys())}")
                 logger.debug("All [step_req] received from clients.")
                 on_step()
                 
 
                 self.req_state.reset()
-                logger.info(f"clients after reset:{[f'{c}: {r.recv}' for c, r in self.req_state.step.items()]}")
+                # logger.info(f"clients after reset:{[f'{c}: {r.recv}' for c, r in self.req_state.step.items()]}")
 
                 self._step_cv.notify_all()
             else:

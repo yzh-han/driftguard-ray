@@ -228,7 +228,7 @@ def main() -> None:
                     # logger.info(f"Requesting step_2 from client actor {ray.get(actor.get_cid.remote())} ...")
                     ray.get(actor.step_2.remote())
                 for actor in client_actors:
-                    # logger.info(f"Requesting step_3 from client actor {ray.get(actor.get_cid.remote())} ...")
+                    logger.info(f"Requesting step_3 from client actor {ray.get(actor.get_cid.remote())} ...")
                     ray.get(actor.step_3.remote())
                 # ray.get([actor.step_2.remote() for actor in client_actors])
                 # ray.get([actor.step_3.remote() for actor in client_actors])
