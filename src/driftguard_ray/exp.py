@@ -15,9 +15,9 @@ class DATASET(Enum):
     """
     (meta_path, num_classes, image_size)
     """
-    DG5 = (Path("~/driftguard-ray/datasets/dg5/_meta.json"), 10, 28)
-    PACS = (Path("~/driftguard-ray/datasets/pacs/_meta.json"), 7, 224)
-    DDN = (Path("~/driftguard-ray/datasets/drift_domain_net/_meta.json"), 7, 224)
+    DG5 = (Path("/home/yh91//driftguard-ray/datasets/dg5/_meta.json"), 10, 28)
+    PACS = (Path("/home/yh91//driftguard-ray/datasets/pacs/_meta.json"), 7, 224)
+    DDN = (Path("/home/yh91//driftguard-ray/datasets/drift_domain_net/_meta.json"), 7, 224)
     @property
     def path(self) -> Path:
         return self.value[0]
