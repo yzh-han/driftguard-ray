@@ -119,12 +119,12 @@ exps = Exps(
     ],
     strategies=[
         # Never(),
-        # AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
+        AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
         # PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
         # MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
         # MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
         # Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
-        Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.95, data_port=14601, server_port=14602),
+        # Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.95, data_port=14601, server_port=14602),
     ],
     device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
 ).exps
