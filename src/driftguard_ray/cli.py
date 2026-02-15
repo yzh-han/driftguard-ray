@@ -195,8 +195,13 @@ def main() -> None:
         )
 
 
-        data_actor = RayDataServiceActor.remote(data_args)
-        server_actor = RayFedServerActor.options(max_concurrency=32).remote(
+        data_actor = RayDataServiceActor.options(
+            resources={"head": 0.01},
+        ).remote(data_args)
+        server_actor = RayFedServerActor.options(
+            max_concurrency=32,
+            resources={"head": 0.01},
+        ).remote(
             FedServerArgs(
                 data_endpoint=None,
                 num_clients=cfg.num_clients,
@@ -218,6 +223,7 @@ def main() -> None:
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
+                        resources={"head": 0.01},
                     ).remote(
                         build_client_args(
                             cid, cfg, data_ep, server_ep, resource={"pi_1": 1}
@@ -228,6 +234,7 @@ def main() -> None:
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
+                        resources={"head": 0.01},
                     ).remote(
                         build_client_args(
                             cid, cfg, data_ep, server_ep, resource={"pi_2": 1}
@@ -238,6 +245,7 @@ def main() -> None:
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
+                        resources={"head": 0.01},
                     ).remote(
                         build_client_args(
                             cid, cfg, data_ep, server_ep, resource={"pi_3": 1}
@@ -294,3 +302,8 @@ if __name__ == "__main__":
 #     num_gpus=1,
 #     resources={"ssd": 1, "node_elseptimo": 0.01}
 # ).remote()
+
+# ray start --head --port=9001 --resources='{"head":1}'
+# ray start --address=localhost:9001 --resources='{"pi_1":5}'
+# ray start --address=localhost:9001 --resources='{"pi_2":5}'
+# ray start --address=localhost:9001 --resources='{"pi_3":5}'
