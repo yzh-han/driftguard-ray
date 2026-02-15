@@ -215,6 +215,7 @@ class FedClient:
         )
 
 # @ray.remote(resources={"pi_2": 1})
+@ray.remote
 def _train(
     img_size: int,
     batch_size: int,
