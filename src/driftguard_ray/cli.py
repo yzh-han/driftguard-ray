@@ -128,7 +128,8 @@ exps = Exps(
         Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
         Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3, data_port=14301, server_port=14302),
     ],
-    device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
+    # device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
+    device="cpu",
 ).exps
 
 
@@ -307,4 +308,4 @@ if __name__ == "__main__":
 # ray start --address=localhost:9001 --resources='{"pi_1":6}'
 # ray start --address=localhost:9001 --resources='{"pi_2":6}'
 # ray start --address=localhost:9001 --resources='{"pi_3":6}'
-# ray job submit --address http://localhost:8265 -- python src/driftguard_ray/cli.py | tee log/log_ab.
+# ray job submit --address http://localhost:8265 -- python src/driftguard_ray/cli.py | tee log/log_ab.txt
