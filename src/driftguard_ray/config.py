@@ -26,6 +26,8 @@ def setup_logging(
     
     # 避免重复配置
     if logger.handlers:
+        # Prevent double logging via root logger propagation.
+        logger.propagate = False
         return logger
         
     logger.setLevel(getattr(logging, level.upper()))
@@ -47,6 +49,9 @@ def setup_logging(
         file_formatter = logging.Formatter(format_str)
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
+
+    # Keep logs on this logger only; otherwise Ray/root handlers can duplicate lines.
+    logger.propagate = False
     
     return logger
 

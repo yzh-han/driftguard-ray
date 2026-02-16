@@ -120,16 +120,13 @@ exps = Exps(
         # MODEL.CVIT
     ],
     strategies=[
-        # Never(),
-        # AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
-        # PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
-        # MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
-        # MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
-        # Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
-        Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=2, data_port=14301, server_port=14302),
+        Never(),
+        AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
+        PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
+        MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
+        MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
+        Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
         Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3, data_port=14301, server_port=14302),
-        Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=4, data_port=14301, server_port=14302),
-        Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=5, data_port=14301, server_port=14302),
     ],
     device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
 ).exps
@@ -149,8 +146,8 @@ def main() -> None:
         cfg = LaunchConfig(
             # exp_root=f"exp/ablation_{exp.strategy.name}",
             # exp_root=f"exp/{exp.strategy.name}_clu{clustr}_mgsize{min_group_size}",
-            # exp_root="exp/pi",
-            exp_root=f"exp/ablations/mingrp/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
+            exp_root="exp/pi",
+            # exp_root=f"exp/ablations/mingrp/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
             exp_name=exp.name,
             # data service
             sample_size_per_step=30,  # <--------------------
@@ -161,7 +158,7 @@ def main() -> None:
             num_clients=18, # 5
             model=exp.model,
             device=exp.device,
-            epochs=10,  # 20 <--------------------
+            epochs=20,  # 20 <--------------------
             lr=exp.lr,
             # server
             rt_round=5,  # 5 communication rounds <--------------------
@@ -307,7 +304,7 @@ if __name__ == "__main__":
 # ).remote()
 
 # ray start --head --port=9001 --resources='{"head":1}'
-# ray start --address=localhost:9001 --resources='{"pi_1":5}'
-# ray start --address=localhost:9001 --resources='{"pi_2":5}'
-# ray start --address=localhost:9001 --resources='{"pi_3":5}'
-# ray job submit --address http://localhost:8265 -- python src/driftguard_ray/cli.py
+# ray start --address=localhost:9001 --resources='{"pi_1":6}'
+# ray start --address=localhost:9001 --resources='{"pi_2":6}'
+# ray start --address=localhost:9001 --resources='{"pi_3":6}'
+# ray job submit --address http://localhost:8265 -- python src/driftguard_ray/cli.py | tee log/log_ab.
