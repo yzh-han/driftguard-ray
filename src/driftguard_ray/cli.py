@@ -120,16 +120,16 @@ exps = Exps(
         # MODEL.CVIT
     ],
     strategies=[
-        Never(),
-        AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
-        PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
-        MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
-        MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
+        # Never(),
+        # AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
+        # PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
+        # MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
+        # MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
         Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
         Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3, data_port=14301, server_port=14302),
     ],
-    # device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
-    device="cpu",
+    device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
+    # device="cpu",
 ).exps
 
 

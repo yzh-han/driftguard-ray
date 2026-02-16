@@ -495,6 +495,13 @@ class Cluster(RetrainStrategy):
         if rt_state.rt_cfg.param_type == ParamType.CLUSTER:
             # retrain local for selected clients
             if cid in rt_state.rt_cfg.selection:
+                _fed_params = fed_params_list[cid]
+                if not FedParam.GATE_SIZE:
+                    FedParam.GATE_SIZE = len(_fed_params.gate)
+                if not FedParam.LOCAL_SIZE:
+                    FedParam.LOCAL_SIZE = len(_fed_params.local)
+                if not FedParam.OTHER_SIZE:
+                    FedParam.OTHER_SIZE = len(_fed_params.other)
                 fed_params = (
                     FedParam.separate(grp_state.get_group(cid).params) if grp_state.get_group(cid).params
                     else fed_params_list[cid]
