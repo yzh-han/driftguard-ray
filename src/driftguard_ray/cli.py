@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
         ray.init(
             # address=cfg.ray_address,
-            address="auto",
+            # address="auto",  # requires a running Ray cluster
             runtime_env={"working_dir": ".",},
             ignore_reinit_error=True,
             log_to_driver=True,
