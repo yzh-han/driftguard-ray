@@ -157,7 +157,7 @@ def main() -> None:
             # client
             total_steps=30,  # <--------------------
             batch_size=8,
-            num_clients=18, # 5
+            num_clients=20, # 5
             model=exp.model,
             device=exp.device,
             epochs=20,  # 20 <--------------------
@@ -225,35 +225,17 @@ def main() -> None:
                 *[
                     RayFedClientActor.options(
                         num_gpus=0.01 if "cuda" in cfg.device else 0,
-                        resources={"head": 0.01},
+                        # resources={"head": 0.01},
                     ).remote(
                         build_client_args(
-                            cid, cfg, data_ep, server_ep, resource={"pi_1": 1}
+                            cid,
+                            cfg,
+                            data_ep,
+                            server_ep,
+                            # resource={"pi_1": 1},
                         )
                     )
                     for cid in range(0, cfg.num_clients // 3)
-                ],
-                *[
-                    RayFedClientActor.options(
-                        num_gpus=0.01 if "cuda" in cfg.device else 0,
-                        resources={"head": 0.01},
-                    ).remote(
-                        build_client_args(
-                            cid, cfg, data_ep, server_ep, resource={"pi_2": 1}
-                        )
-                    )
-                    for cid in range(cfg.num_clients // 3, 2 * cfg.num_clients // 3)
-                ],
-                *[
-                    RayFedClientActor.options(
-                        num_gpus=0.01 if "cuda" in cfg.device else 0,
-                        resources={"head": 0.01},
-                    ).remote(
-                        build_client_args(
-                            cid, cfg, data_ep, server_ep, resource={"pi_3": 1}
-                        )
-                    )
-                    for cid in range(2 * cfg.num_clients // 3, cfg.num_clients)
                 ],
             ]
             print(len(client_actors))
@@ -310,3 +292,6 @@ if __name__ == "__main__":
 # ray start --address=localhost:9001 --resources='{"pi_2":6}'
 # ray start --address=localhost:9001 --resources='{"pi_3":6}'
 # ray job submit --address http://localhost:8265 -- python src/driftguard_ray/cli.py | tee log/log_ab.txt
+
+# 停止所有 ray 
+# ray stop --force
