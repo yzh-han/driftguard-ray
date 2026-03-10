@@ -120,8 +120,8 @@ exps = Exps(
         # MODEL.CVIT
     ],
     strategies=[
-        Never(),
-        AveTrig(thr_acc=0.8),
+        # Never(),
+        # AveTrig(thr_acc=0.8),
         PerCTrig(thr_acc=0.8),
         MoEAve(thr_acc=0.8),
         MoEPerC(thr_acc=0.8),
