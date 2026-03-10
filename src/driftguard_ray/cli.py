@@ -120,13 +120,14 @@ exps = Exps(
         # MODEL.CVIT
     ],
     strategies=[
-        # Never(),
-        # AveTrig(thr_acc=0.85, data_port=13101, server_port=13102),
-        # PerCTrig(thr_acc=0.85, data_port=13201, server_port=13202),
-        # MoEAve(thr_acc=0.85, data_port=13301, server_port=13302),
-        # MoEPerC(thr_acc=0.85, data_port=14401, server_port=14402),
-        Cluster(thr_acc=0.85, data_port=13501, server_port=13502),
-        Driftguard(thr_group_acc=0.85, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3, data_port=14301, server_port=14302),
+        Never(),
+        AveTrig(thr_acc=0.9),
+        PerCTrig(thr_acc=0.9),
+        MoEAve(thr_acc=0.9),
+        MoEPerC(thr_acc=0.9),
+        Cluster(thr_acc=0.9),
+        Driftguard(thr_group_acc=0.9, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
+
     ],
     device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
     # device="cpu",
@@ -147,7 +148,7 @@ def main() -> None:
         cfg = LaunchConfig(
             # exp_root=f"exp/ablation_{exp.strategy.name}",
             # exp_root=f"exp/{exp.strategy.name}_clu{clustr}_mgsize{min_group_size}",
-            exp_root="exp/pi",
+            exp_root="exp/add1",
             # exp_root=f"exp/ablations/mingrp/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
             exp_name=exp.name,
             # data service
