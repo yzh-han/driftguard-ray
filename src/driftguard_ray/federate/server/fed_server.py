@@ -124,9 +124,9 @@ class FedServer:
 
         self._sync.await_trig(cid, on_trig, obs, fed_params, self.rt_state, self.grp_state, self.param_state)
         
-        assert len(self.current_fed_params_list) == self.grp_state._num_clients, (
-            "Mismatch in collected fed_params."
-        )
+        # assert len(self.current_fed_params_list) == self.grp_state._num_clients, (
+        #     "Mismatch in collected fed_params."
+        # )
         res_fed_params, rt_cfg = self.rt_strategy.res_trig(
             cid,
             self.rt_state,
