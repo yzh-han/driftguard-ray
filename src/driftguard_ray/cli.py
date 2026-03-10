@@ -220,7 +220,6 @@ def main() -> None:
         server_ep = RayServerEndpoint(server_actor)
 
         try:
-            assert cfg.num_clients % 3 == 0, "num_clients should %3 == 0"
             client_actors = [
                 *[
                     RayFedClientActor.options(
@@ -235,7 +234,7 @@ def main() -> None:
                             # resource={"pi_1": 1},
                         )
                     )
-                    for cid in range(0, cfg.num_clients // 3)
+                    for cid in range(0, cfg.num_clients)
                 ],
             ]
             print(len(client_actors))
