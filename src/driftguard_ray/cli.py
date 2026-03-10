@@ -114,22 +114,22 @@ exps = Exps(
         # DATASET.DDN
     ],
     models=[
-        MODEL.CRST_S,
-        # MODEL.CVIT_S,
+        # MODEL.CRST_S,
+        MODEL.CVIT_S,
         # MODEL.CRST_M,
         # MODEL.CVIT
     ],
     strategies=[
         Never(),
-        AveTrig(thr_acc=0.9),
-        PerCTrig(thr_acc=0.9),
-        MoEAve(thr_acc=0.9),
-        MoEPerC(thr_acc=0.9),
-        Cluster(thr_acc=0.9),
-        Driftguard(thr_group_acc=0.9, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
+        AveTrig(thr_acc=0.75),
+        PerCTrig(thr_acc=0.75),
+        MoEAve(thr_acc=0.75),
+        MoEPerC(thr_acc=0.75),
+        Cluster(thr_acc=0.75),
+        Driftguard(thr_group_acc=0.75, thr_sha_acc_pct=0.75, cluster_thr= 0.3, min_group_size=3),
 
     ],
-    device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
+    device="cuda:1" if torch.cuda.is_available() else "cpu",  # <--------------------
     # device="cpu",
 ).exps
 
