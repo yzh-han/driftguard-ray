@@ -198,11 +198,11 @@ def main() -> None:
 
 
         data_actor = RayDataServiceActor.options(
-            resources={"head": 0.01},
+            # resources={"head": 0.01},
         ).remote(data_args)
         server_actor = RayFedServerActor.options(
             max_concurrency=32,
-            resources={"head": 0.01},
+            # resources={"head": 0.01},
         ).remote(
             FedServerArgs(
                 data_endpoint=None,
