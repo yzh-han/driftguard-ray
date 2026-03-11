@@ -124,9 +124,9 @@ exps = Exps(
         # AveTrig(thr_acc=0.8),
         # PerCTrig(thr_acc=0.8),
         # MoEAve(thr_acc=0.8),
-        # MoEPerC(thr_acc=0.8),
-        Cluster(thr_acc=0.8),
-        Driftguard(thr_group_acc=0.8, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
+        MoEPerC(thr_acc=0.8),
+        # Cluster(thr_acc=0.8),
+        # Driftguard(thr_group_acc=0.8, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
 
     ],
     device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
