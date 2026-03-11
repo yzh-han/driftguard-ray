@@ -107,8 +107,10 @@ class FedServer:
 
     def req_trig(self, args: ReqTrigArgs) -> ReqTrigRes:
         cid, obs, fed_params = args
-        
-        self.current_fed_params_list: List[FedParam] = []
+
+        self.current_fed_params_list: List[FedParam] = (
+            self.current_fed_params_list or []
+        )
         def on_trig(
             obs_list: List[Observation],
             fed_params_list: List[FedParam],
@@ -117,6 +119,7 @@ class FedServer:
             param_state: FedParam,
         ) -> None:
             # 闭包 获取所有客户端的 fed_params
+            self.current_fed_params_list = []
             self.current_fed_params_list.extend(fed_params_list)
 
             self.rt_strategy.on_trig(obs_list, fed_params_list, rt_state, grp_state, param_state)
@@ -124,15 +127,15 @@ class FedServer:
 
         self._sync.await_trig(cid, on_trig, obs, fed_params, self.rt_state, self.grp_state, self.param_state)
         
-        # assert len(self.current_fed_params_list) == self.grp_state._num_clients, (
-        #     "Mismatch in collected fed_params."
-        # )
+        # snapshot: 防止下一轮 on_trig 覆盖
+        fed_params_snapshot = list(self.current_fed_params_list)
+
         res_fed_params, rt_cfg = self.rt_strategy.res_trig(
             cid,
             self.rt_state,
             self.param_state,
             self.grp_state,
-            self.current_fed_params_list,
+            fed_params_snapshot,
             )
        
         return res_fed_params, rt_cfg  # placeholder
