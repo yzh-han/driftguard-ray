@@ -109,7 +109,9 @@ class FedServer:
         cid, obs, fed_params = args
 
         self.current_fed_params_list: List[FedParam] = (
-            self.current_fed_params_list or []
+            []
+            if not hasattr(self, "current_fed_params_list")
+            else self.current_fed_params_list
         )
         def on_trig(
             obs_list: List[Observation],
