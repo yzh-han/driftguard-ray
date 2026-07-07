@@ -93,8 +93,6 @@ class RayFedClientActor:
     def __init__(self, args: FedClientArgs) -> None:
         """Initialize actor with FedClient."""
         self._client = FedClient(args)
-        # Keep preload behavior identical to the previous threaded client path.
-        self._client._trainer.load()
     
     def get_cid(self) -> int:
         return self._client.cid

@@ -20,7 +20,7 @@ from driftguard_ray.federate.server.fed_server import FedServerArgs
 from driftguard_ray.federate.client.client import FedClientArgs
 from driftguard_ray.data.service import DataServiceArgs
 from driftguard_ray.data.drift_simulation import DriftEventArgs
-from driftguard_ray.model.training.trainer import TrainConfig, Trainer
+from driftguard_ray.model.training.trainer import TrainConfig
 from driftguard_ray.recorder import Recorder
 from driftguard_ray.runtime.interfaces import DataServiceEndpoint, ServerEndpoint
 from driftguard_ray.runtime.ray.actors import (
@@ -83,16 +83,15 @@ def build_client_args(
         cid=cid,
         data_endpoint=data_endpoint,
         server_endpoint=server_endpoint,
-        trainer=Trainer(
-            cfg.model.fn(cfg.dataset.num_classes),
-            config=TrainConfig(
-                epochs=cfg.epochs,
-                device=cfg.device,
-                lr=cfg.lr,
-                accumulate_steps=1,
-                early_stop=True,
-                cp_name=f"{cfg.dataset.name}-{cfg.model.value}",
-            ),
+        model_fn=cfg.model.fn,
+        num_classes=cfg.dataset.num_classes,
+        train_config=TrainConfig(
+            epochs=cfg.epochs,
+            device=cfg.device,
+            lr=cfg.lr,
+            accumulate_steps=1,
+            early_stop=True,
+            cp_name=f"{cfg.dataset.name}-{cfg.model.value}",
         ),
         total_steps=cfg.total_steps,
         batch_size=cfg.batch_size,
@@ -109,27 +108,50 @@ def build_client_args(
 #######################################
 exps = Exps(
     datasets=[
-        DATASET.DG5,
-        # DATASET.PACS,
+        # DATASET.DG5,
+        DATASET.PACS,
         # DATASET.DDN
     ],
     models=[
         # MODEL.CRST_S,
-        MODEL.CVIT_S,
-        # MODEL.CRST_M,
+        # MODEL.CVIT_S,
+        MODEL.CRST_M,
         # MODEL.CVIT
     ],
     strategies=[
+        Never(),
+        AveTrig(thr_acc=0.6),
+        PerCTrig(thr_acc=0.6),
+        MoEAve(thr_acc=0.6),
+        MoEPerC(thr_acc=0.6),
+        Cluster(thr_acc=0.6),
+        Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.95, cluster_thr= 0.12, min_group_size=8),
+        
+        
+        # Driftguard(thr_group_acc=0.5, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
+        
         # Never(),
-        # AveTrig(thr_acc=0.8),
-        # PerCTrig(thr_acc=0.8),
-        # MoEAve(thr_acc=0.8),
-        # MoEPerC(thr_acc=0.8),
-        # Cluster(thr_acc=0.8),
-        Driftguard(thr_group_acc=0.8, thr_sha_acc_pct=0.85, cluster_thr= 0.3, min_group_size=4),
+        # AveTrig(thr_acc=0.775),
+        # PerCTrig(thr_acc=0.775),
+        # MoEAve(thr_acc=0.775),
+        # MoEPerC(thr_acc=0.775),
+        # Cluster(thr_acc=0.775),
+        # Driftguard(thr_group_acc=0.775, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
+        
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.8, cluster_thr= 0.3, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.99, cluster_thr= 0.3, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.85, cluster_thr= 0.3, min_group_size=2),
+        
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.1, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.2, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.4, min_group_size=2),
+        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.5, min_group_size=2),
+
 
     ],
-    device="cuda:0" if torch.cuda.is_available() else "cpu",  # <--------------------
+    device="cuda" if torch.cuda.is_available() else "cpu",  # <-------------------- (使用CUDA_VISIBLE_DEVICES=1指定的GPU)
     # device="cpu",
 ).exps
 
@@ -142,22 +164,25 @@ def main() -> None:
             f"[Experiment]: {exp.name}, Dataset: {exp.dataset.name}, Model: {exp.model.value}, Strategy: {exp.strategy.name}, lr: {exp.lr}"
         )
         # cluster_thr, min_group_size = 0.12, 2 # <--------------------
+        global_acc_thr = str(exp.strategy.thr_sha_acc_pct).split('.')[-1]
         clustr = (
             str(exp.cluster_thr).split(".")[0] + str(exp.cluster_thr).split(".")[-1]
         )
         cfg = LaunchConfig(
             # exp_root=f"exp/ablation_{exp.strategy.name}",
             # exp_root=f"exp/{exp.strategy.name}_clu{clustr}_mgsize{min_group_size}",
-            exp_root=f"exp/add/{exp.strategy.name}",
-            # exp_root=f"exp/ablations/mingrp/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
+            # exp_root=f"exp/add/{exp.strategy.name}",
+            # exp_root=f"exp/abs-c6-clu/9_{str(exp.strategy.cluster_thr).split('.')[-1]}_2",
+            exp_root=f"exp/scale/{exp.strategy.name}",
+            # exp_root=f"exp/abs/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
             exp_name=exp.name,
             # data service
-            sample_size_per_step=30,  # <--------------------
+            sample_size_per_step=5,  # <--------------------
             dataset=exp.dataset,
             # client
-            total_steps=30,  # <--------------------
-            batch_size=8,
-            num_clients=20, # 5
+            total_steps=35,  # <--------------------  total steps
+            batch_size=5,  # 8 <--------------------  batch size
+            num_clients=100, # 5.   # < -------------------- num clients
             model=exp.model,
             device=exp.device,
             epochs=20,  # 20 <--------------------
@@ -201,7 +226,7 @@ def main() -> None:
             # resources={"head": 0.01},
         ).remote(data_args)
         server_actor = RayFedServerActor.options(
-            max_concurrency=32,
+            max_concurrency=120,
             # resources={"head": 0.01},
         ).remote(
             FedServerArgs(
@@ -223,7 +248,7 @@ def main() -> None:
             client_actors = [
                 *[
                     RayFedClientActor.options(
-                        num_gpus=0.01 if "cuda" in cfg.device else 0,
+                        num_gpus=0,
                         # resources={"head": 0.01},
                     ).remote(
                         build_client_args(
@@ -231,7 +256,7 @@ def main() -> None:
                             cfg,
                             data_ep,
                             server_ep,
-                            # resource={"pi_1": 1},
+                            resource={"client": 1},
                         )
                     )
                     for cid in range(0, cfg.num_clients)
@@ -250,25 +275,36 @@ def main() -> None:
             for cid, recorder in enumerate(recorders):
                 recorder.record(cid)
         finally:
-            data_ep.stop()
-            server_ep.stop()
+            # 显式释放所有 actors，释放显存
+            for actor in client_actors:
+                ray.kill(actor)
+            ray.kill(data_actor)
+            ray.kill(server_actor)
+            # data_ep.stop()
+            # server_ep.stop()
+            
+            # 等待所有 actor 真正被销毁
+            import time
+            time.sleep(1)
 
         logger.info("Launch finished.")
 
 
 
 if __name__ == "__main__":
+
     if not ray.is_initialized():
         import os
         os.environ["RAY_RUNTIME_ENV_IGNORE_GITIGNORE"] = "1"  # 放在 ray.init 前
-
+        # os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # 只使用cuda:1
 
         ray.init(
             # address=cfg.ray_address,
-            # address="auto",  # requires a running Ray cluster
+            address="auto",  # requires a running Ray cluster
             runtime_env={"working_dir": ".",},
             ignore_reinit_error=True,
             log_to_driver=True,
+            # num_gpus=2,  # 告诉 Ray 有 2 块 GPU 可用
         )
         
     main()
@@ -286,6 +322,7 @@ if __name__ == "__main__":
 #     resources={"ssd": 1, "node_elseptimo": 0.01}
 # ).remote()
 
+# ray start --head --num-gpus=2 --port=99001 --resources='{"head":1, "client":80}'
 # ray start --head --port=9001 --resources='{"head":1}'
 # ray start --address=localhost:9001 --resources='{"pi_1":6}'
 # ray start --address=localhost:9001 --resources='{"pi_2":6}'
