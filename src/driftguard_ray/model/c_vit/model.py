@@ -58,7 +58,7 @@ class PatchEmbedding(nn.Module):
         B, C, H, W = x.shape
         torch._assert(
             H == self.img_size and W == self.img_size,
-            "Input image size doesn't match model.",
+            f"Input image size doesn't match model. Expected {self.img_size}x{self.img_size}, got {H}x{W}.",
         )
         x = self.proj(x)  # B, 3, 224, 224 -> B, 768, 14, 14
         x = x.flatten(2)  # B, 768, 14, 14 -> B, 768, 196

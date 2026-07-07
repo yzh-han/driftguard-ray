@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 from time import sleep
+from typing import Any
 
 import ray
+import yaml
 import torch
 from driftguard_ray.exp import DATASET, MODEL, Exps
+from driftguard_ray.federate.server import retrain_strategy
 from driftguard_ray.federate.server.retrain_strategy import (
     Driftguard,
     Never,
@@ -106,52 +110,31 @@ def build_client_args(
 #######################################
 # Main Launching Code
 #######################################
+EXP_NAME = "seed_66"
+YML_PATH = Path(f"exp_cfgs/{EXP_NAME}m.yml")
+with open(YML_PATH, "r", encoding="utf-8") as f:
+    EXPS_CFG = yaml.safe_load(f)
+    SEED = EXPS_CFG.get("seed", 42)
+    
 exps = Exps(
     datasets=[
-        # DATASET.DG5,
-        DATASET.PACS,
-        # DATASET.DDN
+        DATASET[dataset_name]
+        for dataset_name in EXPS_CFG.get("dataset", [])
+        # DATASET.DG5, DATASET.PACS, DATASET.DDN
     ],
     models=[
-        # MODEL.CRST_S,
-        # MODEL.CVIT_S,
-        MODEL.CRST_M,
-        # MODEL.CVIT
+        MODEL[model_name] 
+        for model_name in EXPS_CFG.get("models", [])
+        # MODEL.CRST_S, MODEL.CVIT_S, MODEL.CRST_M, MODEL.CVIT
     ],
     strategies=[
-        Never(),
-        AveTrig(thr_acc=0.6),
-        PerCTrig(thr_acc=0.6),
-        MoEAve(thr_acc=0.6),
-        MoEPerC(thr_acc=0.6),
-        Cluster(thr_acc=0.6),
-        Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.95, cluster_thr= 0.12, min_group_size=8),
-        
-        
-        # Driftguard(thr_group_acc=0.5, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
-        
-        # Never(),
-        # AveTrig(thr_acc=0.775),
-        # PerCTrig(thr_acc=0.775),
-        # MoEAve(thr_acc=0.775),
-        # MoEPerC(thr_acc=0.775),
-        # Cluster(thr_acc=0.775),
-        # Driftguard(thr_group_acc=0.775, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=3),
-        
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.8, cluster_thr= 0.3, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.99, cluster_thr= 0.3, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.85, cluster_thr= 0.3, min_group_size=2),
-        
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.1, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.2, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.3, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.4, min_group_size=2),
-        # Driftguard(thr_group_acc=0.6, thr_sha_acc_pct=0.9, cluster_thr= 0.5, min_group_size=2),
-
-
+        getattr(retrain_strategy, strategy_name)(**strategy_params)
+        for strategy in EXPS_CFG.get("strategies", [])
+        for strategy_name, strategy_params in strategy.items()
     ],
-    device="cuda" if torch.cuda.is_available() else "cpu",  # <-------------------- (使用CUDA_VISIBLE_DEVICES=1指定的GPU)
+    device="cuda"
+    if torch.cuda.is_available()
+    else "cpu",  # <-------------------- (使用CUDA_VISIBLE_DEVICES=1指定的GPU)
     # device="cpu",
 ).exps
 
@@ -169,20 +152,15 @@ def main() -> None:
             str(exp.cluster_thr).split(".")[0] + str(exp.cluster_thr).split(".")[-1]
         )
         cfg = LaunchConfig(
-            # exp_root=f"exp/ablation_{exp.strategy.name}",
-            # exp_root=f"exp/{exp.strategy.name}_clu{clustr}_mgsize{min_group_size}",
-            # exp_root=f"exp/add/{exp.strategy.name}",
-            # exp_root=f"exp/abs-c6-clu/9_{str(exp.strategy.cluster_thr).split('.')[-1]}_2",
-            exp_root=f"exp/scale/{exp.strategy.name}",
-            # exp_root=f"exp/abs/acc{str(exp.strategy.thr_sha_acc_pct).split('.')[-1]}_clu{str(exp.strategy.cluster_thr).split('.')[-1]}_mingrp{exp.strategy.min_group_size}",
+            exp_root=f"exp/{EXP_NAME}",
             exp_name=exp.name,
             # data service
             sample_size_per_step=5,  # <--------------------
             dataset=exp.dataset,
             # client
-            total_steps=35,  # <--------------------  total steps
+            total_steps=31,  # <--------------------  total steps
             batch_size=5,  # 8 <--------------------  batch size
-            num_clients=100, # 5.   # < -------------------- num clients
+            num_clients=20, # 5.   # < -------------------- num clients
             model=exp.model,
             device=exp.device,
             epochs=20,  # 20 <--------------------
@@ -195,6 +173,7 @@ def main() -> None:
             min_group_size=exp.strategy.min_group_size or exp.min_group_size,
             data_port=exp.strategy.data_port,  # <--------------------
             server_port=exp.strategy.server_port,  # <--------------------
+            seed=int(SEED),
         )
         logger.info(f"root: {cfg.exp_root}, name: {cfg.exp_name}")
 
@@ -322,7 +301,7 @@ if __name__ == "__main__":
 #     resources={"ssd": 1, "node_elseptimo": 0.01}
 # ).remote()
 
-# ray start --head --num-gpus=2 --port=99001 --resources='{"head":1, "client":80}'
+# ray start --head --num-gpus=2 --port=9901 --resources='{"head":1, "client":20}'
 # ray start --head --port=9001 --resources='{"head":1}'
 # ray start --address=localhost:9001 --resources='{"pi_1":6}'
 # ray start --address=localhost:9001 --resources='{"pi_2":6}'
