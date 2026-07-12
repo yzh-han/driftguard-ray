@@ -25,7 +25,7 @@ class Fp:
         out_softs: np.ndarray,
         gate_activations: np.ndarray,
         w_size: int, # 可靠性权重, 几个样本才可信
-        eps: float = 1e-12,
+        eps: float = 1e-6,
     ) -> Fp:
         """Build Fp from out_softs and gate activations.
 
